@@ -1,8 +1,131 @@
+// frontend/src/pages/Home.jsx
+import { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
+import { Link } from 'react-router-dom';
+import AuthContext from '../context/AuthContext'; 
+
 const Home = () => {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [locationError, setLocationError] = useState('');
+  const [userLocation, setUserLocation] = useState(null);
+
+  const { user } = useContext(AuthContext); 
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser');
+      setLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const loc = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        setUserLocation(loc);
+        fetchPosts(loc.lat, loc.lng);
+      },
+      (error) => {
+        setLocationError('Please enable location access to see posts nearby.');
+        setLoading(false);
+      }
+    );
+  }, [user]); 
+
+  const fetchPosts = async (lat, lng) => {
+    try {
+      let url = '/api/posts';
+      
+      const params = new URLSearchParams();
+      if (lat && lng) {
+        params.append('lat', lat);
+        params.append('lng', lng);
+        params.append('dist', 10);
+      }
+      
+      if (user) {
+        params.append('excludeId', user._id);
+      }
+
+      const { data } = await axios.get(`${url}?${params.toString()}`);
+      setPosts(data);
+      setLoading(false);
+    } catch (error) {
+      console.error(error);
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="text-center mt-20">
-      <h1 className="text-4xl font-bold text-gray-800">Welcome to LocalAid</h1>
-      <p className="text-gray-600 mt-4">Find help nearby or share resources with your community.</p>
+    <div className="container mx-auto mt-8 px-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">Nearby Activity</h1>
+        {userLocation && (
+          <span className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
+            📍 Showing posts within 10km
+          </span>
+        )}
+      </div>
+
+      {locationError && (
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
+          <p>{locationError}</p>
+        </div>
+      )}
+
+      {loading ? (
+        <p className="text-center text-gray-500">Scanning your area...</p>
+      ) : posts.length === 0 ? (
+        <div className="text-center mt-20">
+            <p className="text-xl text-gray-600">No other posts found nearby.</p>
+            <p className="text-gray-500 mt-2">
+               (Your own posts are hidden from this feed)
+            </p>
+            <Link to="/create-post" className="text-blue-500 underline mt-4 block">Create a Post</Link>
+        </div>
+      ) : (
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {posts.map((post) => (
+            <div key={post._id} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
+              <div className={`h-2 w-full ${post.type === 'request' ? 'bg-red-500' : 'bg-green-500'}`}></div>
+              
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-2">
+                    <span className={`text-xs font-bold px-2 py-1 rounded uppercase ${
+                        post.type === 'request' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                    }`}>
+                        {post.type}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                        {new Date(post.createdAt).toLocaleDateString()}
+                    </span>
+                </div>
+
+                <h3 className="text-xl font-bold text-gray-800 mb-2">{post.title}</h3>
+                <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                    {post.description}
+                </p>
+
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex items-center">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs">
+                            {post.user?.name?.charAt(0) || 'U'}
+                        </div>
+                        <span className="text-sm text-gray-600 ml-2">{post.user?.name}</span>
+                    </div>
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        {post.category}
+                    </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
