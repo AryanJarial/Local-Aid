@@ -83,4 +83,13 @@ const deletePost = async (req, res) => {
   }
 };
 
-export { getPosts, createPost, deletePost };
+const getMyPosts = async (req, res) => {
+  try {
+    const posts = await Post.find({ user: req.user._id }).sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { getPosts, createPost, deletePost, getMyPosts };
