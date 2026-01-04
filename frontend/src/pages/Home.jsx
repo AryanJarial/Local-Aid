@@ -2,13 +2,20 @@
 import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import AuthContext from '../context/AuthContext'; 
+import AuthContext from '../context/AuthContext';
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:5000', {
+  autoConnect: true,
+});
 
 const Home = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [locationError, setLocationError] = useState('');
   const [userLocation, setUserLocation] = useState(null);
+
+  const [incomingPost, setIncomingPost] = useState(null);
 
   const { user } = useContext(AuthContext); 
 
@@ -26,14 +33,47 @@ const Home = () => {
           lng: position.coords.longitude,
         };
         setUserLocation(loc);
-        fetchPosts(loc.lat, loc.lng);
       },
       (error) => {
         setLocationError('Please enable location access to see posts nearby.');
         setLoading(false);
       }
     );
-  }, [user]); 
+
+    const socket = io('http://localhost:5000');
+
+    socket.on('connect', () => {
+      console.log('✅ Connected to Socket.io Server with ID:', socket.id);
+    });
+
+    // DEBUG: Check if we receive the event (even if we filter it out)
+    socket.on('new-post', (newPost) => {
+      console.log('📩 Received new post signal:', newPost); // <--- LOOK FOR THIS IN CONSOLE
+      
+      // ... existing filter logic ...
+    });
+
+    socket.on('new-post', (newPost) => {
+      if (user && newPost.user._id !== user._id) {
+         setPosts((prevPosts) => [newPost, ...prevPosts]);
+         
+         setIncomingPost(true);
+         setTimeout(() => setIncomingPost(false), 3000);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!userLocation) return;
+    if (!user) return;
+
+    fetchPosts(userLocation.lat, userLocation.lng);
+  }, [userLocation, user]);
+
 
   const fetchPosts = async (lat, lng) => {
     try {
@@ -62,7 +102,10 @@ const Home = () => {
   return (
     <div className="container mx-auto mt-8 px-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Nearby Activity</h1>
+        <h1 className="text-3xl font-bold text-gray-800">
+            Nearby Activity
+            {incomingPost && <span className="ml-2 text-xs bg-red-500 text-white px-2 py-1 rounded-full animate-pulse">New!</span>}
+        </h1>
         {userLocation && (
           <span className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
             📍 Showing posts within 10km
@@ -87,7 +130,7 @@ const Home = () => {
             <Link to="/create-post" className="text-blue-500 underline mt-4 block">Create a Post</Link>
         </div>
       ) : (
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {posts.map((post) => (
             <div key={post._id} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
