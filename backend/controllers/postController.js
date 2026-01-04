@@ -1,4 +1,5 @@
 import Post from '../models/postModel.js';
+import mongoose from 'mongoose';
 
 const getPosts = async (req, res) => {
   try {
@@ -19,8 +20,8 @@ const getPosts = async (req, res) => {
       };
     }
 
-    if (excludeId) {
-      query.user = { $ne: excludeId };
+    if (excludeId && mongoose.Types.ObjectId.isValid(excludeId)) {
+        query.user = { $ne: new mongoose.Types.ObjectId(excludeId) };
     }
 
     const posts = await Post.find(query)
@@ -51,7 +52,13 @@ const createPost = async (req, res) => {
     });
 
     const createdPost = await post.save();
-    res.status(201).json(createdPost);
+
+    const fullPost = await Post.findById(createdPost._id).populate('user', 'name');
+
+    const io = req.app.get('socketio');
+    
+    io.emit('new-post', fullPost);
+    res.status(201).json(fullPost);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
