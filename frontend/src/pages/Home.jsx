@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import { io } from 'socket.io-client';
 import Map from '../components/Map';
+import TrendBanner from '../components/TrendBanner';
 
 const Home = () => {
   const [posts, setPosts] = useState([]);
@@ -59,7 +60,7 @@ const Home = () => {
 
   useEffect(() => {
     if (!userLocation) return;
-    if (!user) return;
+    // if (!user) return;
 
     fetchPosts(userLocation.lat, userLocation.lng);
   }, [userLocation, user]);
@@ -113,6 +114,10 @@ const Home = () => {
           </span>
         )}
       </div>
+
+      {userLocation && (
+        <TrendBanner userLocation={userLocation} />
+      )}
 
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
         <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
