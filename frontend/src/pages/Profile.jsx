@@ -4,9 +4,11 @@ import AuthContext from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 
 const Profile = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, updateUser } = useContext(AuthContext);
   const [myPosts, setMyPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const fetchMyPosts = async () => {
@@ -29,6 +31,37 @@ const Profile = () => {
       fetchMyPosts();
     }
   }, [user]);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    setUploading(true);
+
+    try {
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+
+      const { data } = await axios.post('/api/upload/profile', formData, config);
+      
+      const updatedUser = { ...user, profilePicture: data.imageUrl };
+      updateUser(updatedUser); 
+      
+      setUploading(false);
+      alert('Profile Picture Updated!');
+    } catch (error) {
+      console.error(error);
+      setUploading(false);
+      alert('Image upload failed');
+    }
+  };
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this post?')) {
@@ -55,12 +88,31 @@ const Profile = () => {
     <div className="container mx-auto mt-10 px-4">
       
       <div className="bg-white p-6 rounded shadow-md mb-8 flex justify-between items-center">
+        <div className="relative group">
+            <img 
+                src={user.profilePicture || "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg"} 
+                alt="Profile" 
+                className="w-24 h-24 rounded-full object-cover border-4 border-blue-100"
+            />
+            <label className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                {uploading ? '...' : 'Change'}
+                <input 
+                    type="file" 
+                    className="hidden" 
+                    onChange={handleImageUpload} 
+                    accept="image/*"
+                />
+            </label>
+        </div>
         <div>
             <h1 className="text-3xl font-bold text-gray-800">My Profile</h1>
             <p className="text-gray-600 mt-2"><strong>Name:</strong> {user.name}</p>
             <p className="text-gray-600"><strong>Email:</strong> {user.email}</p>
             <span className="inline-block mt-2 bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded uppercase font-bold">
                 Role: {user.role}
+            </span>
+            <span className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded uppercase font-bold">
+              Karma: {user.karmaPoints}
             </span>
         </div>
         <button onClick={logout} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
