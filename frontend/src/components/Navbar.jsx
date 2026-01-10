@@ -19,12 +19,13 @@ const Navbar = () => {
                                 + Create Post
                             </Link>
 
-                            {/* Link to Profile */}
-                            <Link to="/profile" className="mr-4 hover:underline font-semibold flex items-center">
-                                <div className="w-8 h-8 rounded-full bg-blue-800 flex items-center justify-center mr-2 text-sm">
-                                    {user.name.charAt(0)}
-                                </div>
-                                <span className="hidden sm:inline">{user.name}</span>
+                            <Link to="/profile" className="flex items-center group">
+                                <img 
+                                    src={user.profilePicture}
+                                    alt="User"
+                                    className="w-8 h-8 rounded-full object-cover mr-2 border border-blue-300 group-hover:border-white"
+                                />
+                                <span className="font-semibold">{user.name}</span>
                             </Link>
                         </>
                     ) : (
