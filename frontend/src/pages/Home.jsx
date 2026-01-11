@@ -201,17 +201,26 @@ const Home = () => {
                 <p className="text-gray-600 text-sm mb-4 line-clamp-3">
                     {post.description}
                 </p>
-
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
                     <div className="flex items-center">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs">
-                            {post.user?.name?.charAt(0) || 'U'}
+                        <img 
+                            src={post.user?.profilePicture || "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg"} 
+                            className="w-8 h-8 rounded-full object-cover mr-2"
+                        />
+                        <div>
+                            <span className="text-sm font-bold block">{post.user?.name}</span>
+                            
+                            {user && post.user?._id !== user._id && (
+                                <Link 
+                                    to="/chat" 
+                                    state={{ userId: post.user._id }} 
+                                    className="text-xs text-blue-600 hover:underline font-semibold"
+                                >
+                                    Message
+                                </Link>
+                            )}
                         </div>
-                        <span className="text-sm text-gray-600 ml-2">{post.user?.name}</span>
                     </div>
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {post.category}
-                    </span>
                 </div>
               </div>
             </div>
