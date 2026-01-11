@@ -41,4 +41,27 @@ router.post('/profile', protect, upload.single('image'), async (req, res) => {
   }
 });
 
+router.post('/message', protect, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const b64 = Buffer.from(req.file.buffer).toString('base64');
+    let dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+    
+    const result = await cloudinary.uploader.upload(dataURI, {
+      folder: 'localaid_chat', 
+    });
+
+    res.json({ 
+      imageUrl: result.secure_url 
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Chat image upload failed' });
+  }
+});
+
 export default router;
