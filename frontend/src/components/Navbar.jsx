@@ -21,7 +21,7 @@ const Navbar = () => {
 
                             <Link to="/profile" className="flex items-center group">
                                 <img 
-                                    src={user.profilePicture}
+                                    src={user.profilePicture || "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg"}
                                     alt="User"
                                     className="w-8 h-8 rounded-full object-cover mr-2 border border-blue-300 group-hover:border-white"
                                 />
