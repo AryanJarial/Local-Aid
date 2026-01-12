@@ -42,7 +42,17 @@ const postSchema = mongoose.Schema(
       },
       address: {
         type: String, 
-      }
+      },
+    },
+    status: {
+      type: String,
+      enum: ['open', 'fulfilled', 'closed'],
+      default: 'open',
+    },
+    fulfilledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User', 
+      default: null
     },
   },
   {
