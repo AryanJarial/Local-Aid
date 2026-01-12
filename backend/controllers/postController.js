@@ -1,6 +1,7 @@
 import Post from '../models/postModel.js';
 import mongoose from 'mongoose';
 import OpenAI from 'openai';
+import User from '../models/userModel.js';
 
 const getPosts = async (req, res) => {
   try {
@@ -165,4 +166,56 @@ const getTrendSummary = async (req, res) => {
   }
 };
 
-export { getPosts, createPost, deletePost, getMyPosts, getTrendSummary };
+const fulfillPost = async (req, res) => {
+  const { helperId } = req.body; // The ID of the person who helped
+  const postId = req.params.id;
+
+  try {
+    const post = await Post.findById(postId);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // 1. Security Check: Only the post creator can mark it as done
+    if (post.user.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: 'Not authorized. Only the owner can fulfill this.' });
+    }
+
+    // 2. Prevent double-rewarding
+    if (post.status === 'fulfilled') {
+      return res.status(400).json({ message: 'Post is already fulfilled' });
+    }
+
+    // 3. Update the Post
+    post.status = 'fulfilled';
+    post.fulfilledBy = helperId;
+    await post.save();
+
+    // 4. Award Karma to the Helper
+    if (helperId) {
+        const helper = await User.findByIdAndUpdate(
+            helperId, 
+            { $inc: { karmaPoints: 10 } }, // Increment by 10
+            { new: true }
+        );
+
+        // 5. Send Real-time Notification (Bonus)
+        const io = req.app.get('socketio');
+        if (io) {
+            io.to(helperId.toString()).emit('notification', {
+                message: `You earned 10 Karma for helping with "${post.title}"!`,
+                newKarma: helper.karmaPoints
+            });
+        }
+    }
+
+    res.json(post);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export { getPosts, createPost, deletePost, getMyPosts, getTrendSummary, fulfillPost };
