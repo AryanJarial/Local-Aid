@@ -1,9 +1,29 @@
 import { Link } from 'react-router-dom';
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import AuthContext from '../context/AuthContext';
+import { io } from 'socket.io-client';
+
+const ENDPOINT = "http://localhost:5000";
 
 const Navbar = () => {
     const { user, logout } = useContext(AuthContext);
+
+    useEffect(() => {
+    if (!user) return;
+
+    const socket = io(ENDPOINT);
+    socket.emit("setup", user);
+
+    socket.on("notification", (data) => {
+      // If the notification contains a new Karma score, update it globally
+      if (data.newKarma !== undefined) {
+        updateUser({ karmaPoints: data.newKarma });
+        alert(data.message); // Optional: Show a popup
+      }
+    });
+
+    return () => socket.disconnect();
+  }, [user]);
 
     return (
         <nav className="bg-blue-600 p-4 text-white shadow-md z-50 relative">
@@ -12,6 +32,9 @@ const Navbar = () => {
                 <div className="flex items-center">
                     {user ? (
                         <>
+                            <span className="hidden sm:inline bg-blue-700 px-3 py-1 rounded-full text-xs font-bold mr-4">
+                                ⭐ {user.karmaPoints}
+                            </span>
                             <Link
                                 to="/create-post"
                                 className="bg-green-500 hover:bg-green-600 px-3 py-1 sm:px-4 sm:py-2 rounded mr-4 font-bold text-sm"
