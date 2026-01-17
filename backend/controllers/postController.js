@@ -107,62 +107,85 @@ const getMyPosts = async (req, res) => {
 };
 
 const getTrendSummary = async (req, res) => {
-  try {
-    const { lat, lng, excludeId } = req.query; 
+  const { lat, lng, dist, excludeId } = req.query;
 
-    const query = {
-      type: 'request', 
-      createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } 
+  if (!lat || !lng) {
+    return res.status(400).json({ summary: "Location required" });
+  }
+
+  try {
+    const radiusInKm = dist ? parseFloat(dist) : 50; // Increased default to 50km
+    const userLat = parseFloat(lat);
+    const userLng = parseFloat(lng);
+
+    // console.log(`🔎 Scanning for trends near [${userLng}, ${userLat}] within ${radiusInKm}km...`);
+
+    const matchStage = {
+      location: {
+        $geoWithin: {
+          $centerSphere: [[userLng, userLat], radiusInKm / 6378.1],
+        },
+      },
+      status: 'open', 
     };
 
-    if (lat && lng) {
-      query.location = {
-        $near: {
-          $geometry: { type: 'Point', coordinates: [Number(lng), Number(lat)] },
-          $maxDistance: 10000 
-        }
-      };
-    }
-
     if (excludeId) {
-      query.user = { $ne: excludeId };
+      matchStage.user = { $ne: new mongoose.Types.ObjectId(excludeId) };
     }
 
-    const posts = await Post.find(query).limit(20).select('title category');
-    
-    if (posts.length === 0) {
-      return res.json({ summary: "No recent activity from others to summarize." });
-    }
+    const trends = await Post.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: "$type", 
+          count: { $sum: 1 },
+          categories: { $push: "$category" } 
+        }
+      }
+    ]);
 
-    const postTitles = posts.map(p => `- ${p.title} (${p.category})`).join('\n');
+    // console.log("📊 Trend Query Result:", JSON.stringify(trends, null, 2));
 
-    if (!process.env.OPENAI_API_KEY) {
-      console.log("No OpenAI Key found. Using Mock AI.");
-      
-      const categories = {};
-      posts.forEach(p => { categories[p.category] = (categories[p.category] || 0) + 1; });
-      const topCategory = Object.keys(categories).sort((a,b) => categories[b] - categories[a])[0];
-
+    if (trends.length === 0) {
       return res.json({ 
-        summary: `(Mock AI): There is a high demand for ${topCategory} in your area. Residents are actively looking for help with ${posts[0].title} and similar items.` 
+        summary: "No recent activity from others to summarize." 
       });
     }
 
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    
-    const completion = await openai.chat.completions.create({
-      messages: [
-        { role: "system", content: "You are a helpful community assistant." },
-        { role: "user", content: `Here are recent help requests in this neighborhood:\n${postTitles}\n\nSummarize the top 3 most critical needs in 1 short sentence. Don't mention names.` }
-      ],
-      model: "gpt-3.5-turbo",
+    const requestDoc = trends.find(t => t._id === 'request');
+    const offerDoc = trends.find(t => t._id === 'offer');
+
+    const reqCount = requestDoc ? requestDoc.count : 0;
+    const offerCount = offerDoc ? offerDoc.count : 0;
+
+    const getTopCategory = (doc) => {
+        if (!doc) return null;
+        const counts = {};
+        doc.categories.forEach(c => counts[c] = (counts[c] || 0) + 1);
+        return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+    };
+
+    const topReqCat = getTopCategory(requestDoc);
+    const topOfferCat = getTopCategory(offerDoc);
+
+    let summaryText = "";
+    if (reqCount > offerCount) {
+        summaryText = `High demand for ${topReqCat || 'help'} nearby (${reqCount} requests).`;
+    } else if (offerCount > reqCount) {
+        summaryText = `Locals are offering ${topOfferCat || 'help'} (${offerCount} active offers).`;
+    } else {
+        summaryText = `Balanced activity in your area (${reqCount} requests, ${offerCount} offers).`;
+    }
+
+    res.json({
+        summary: summaryText,
+        mostNeeded: topReqCat,  
+        mostOffered: topOfferCat 
     });
 
-    res.json({ summary: completion.choices[0].message.content });
-
   } catch (error) {
-    console.error("AI Error:", error);
-    res.status(500).json({ message: "Unable to generate summary." });
+    console.error("Trend Error:", error);
+    res.status(500).json({ message: error.message });
   }
 };
 
