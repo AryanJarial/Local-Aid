@@ -1,25 +1,30 @@
 // frontend/src/pages/Home.jsx
-import { useState, useEffect, useContext, useRef } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import { io } from 'socket.io-client';
 import Map from '../components/Map';
 import TrendBanner from '../components/TrendBanner';
+import LandingPage from '../components/LandingPage';
 
 const Home = () => {
+
+  const { user } = useContext(AuthContext); 
+
+  if (!user) {
+    return <LandingPage />;
+  }
+  
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [locationError, setLocationError] = useState('');
   const [userLocation, setUserLocation] = useState(null);
 
   const [incomingPost, setIncomingPost] = useState(false);
-  const socketRef = useRef(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
-
-  const { user } = useContext(AuthContext); 
 
   useEffect(() => {
     if (!navigator.geolocation) {

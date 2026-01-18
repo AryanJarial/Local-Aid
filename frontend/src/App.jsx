@@ -5,8 +5,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import CreatePost from './pages/CreatePost';
 import Profile from './pages/Profile';
+import ChatPage from './pages/ChatPage';
 import 'leaflet/dist/leaflet.css';
-import ChatPage from './pages/ChatPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
