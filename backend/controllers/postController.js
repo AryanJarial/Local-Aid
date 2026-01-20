@@ -40,7 +40,7 @@ const getPosts = async (req, res) => {
 
     const posts = await Post.find(query)
       .sort({ createdAt: -1 })
-      .populate('user', 'name profilePicture'); 
+      .populate('user', 'name profilePicture karmaPoints'); 
 
     res.json(posts);
   } catch (error) {
