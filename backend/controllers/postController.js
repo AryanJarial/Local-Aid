@@ -23,7 +23,7 @@ const getPosts = async (req, res) => {
     }
 
     if (excludeId && mongoose.Types.ObjectId.isValid(excludeId)) {
-        query.user = { $ne: new mongoose.Types.ObjectId(excludeId) };
+      query.user = { $ne: new mongoose.Types.ObjectId(excludeId) };
     }
 
     if (type && type !== 'all') {
@@ -40,7 +40,7 @@ const getPosts = async (req, res) => {
 
     const posts = await Post.find(query)
       .sort({ createdAt: -1 })
-      .populate('user', 'name profilePicture karmaPoints'); 
+      .populate('user', 'name profilePicture karmaPoints');
 
     res.json(posts);
   } catch (error) {
@@ -53,24 +53,24 @@ const createPost = async (req, res) => {
     const { title, description, type, category, latitude, longitude, address } = req.body;
 
     const post = new Post({
-      user: req.user._id, 
+      user: req.user._id,
       title,
       description,
       type,
       category,
       location: {
         type: 'Point',
-        coordinates: [Number(longitude), Number(latitude)], 
+        coordinates: [Number(longitude), Number(latitude)],
         address,
       },
     });
 
     const createdPost = await post.save();
 
-    const fullPost = await Post.findById(createdPost._id).populate('user', 'name profilePicture');
+    const fullPost = await Post.findById(createdPost._id).populate('user', 'name profilePicture karmaPoints');
 
     const io = req.app.get('socketio');
-    
+
     io.emit('new-post', fullPost);
     res.status(201).json(fullPost);
   } catch (error) {
@@ -126,7 +126,7 @@ const getTrendSummary = async (req, res) => {
           $centerSphere: [[userLng, userLat], radiusInKm / 6378.1],
         },
       },
-      status: 'open', 
+      status: 'open',
     };
 
     if (excludeId) {
@@ -137,9 +137,9 @@ const getTrendSummary = async (req, res) => {
       { $match: matchStage },
       {
         $group: {
-          _id: "$type", 
+          _id: "$type",
           count: { $sum: 1 },
-          categories: { $push: "$category" } 
+          categories: { $push: "$category" }
         }
       }
     ]);
@@ -147,8 +147,8 @@ const getTrendSummary = async (req, res) => {
     // console.log("📊 Trend Query Result:", JSON.stringify(trends, null, 2));
 
     if (trends.length === 0) {
-      return res.json({ 
-        summary: "No recent activity from others to summarize." 
+      return res.json({
+        summary: "No recent activity from others to summarize."
       });
     }
 
@@ -159,10 +159,10 @@ const getTrendSummary = async (req, res) => {
     const offerCount = offerDoc ? offerDoc.count : 0;
 
     const getTopCategory = (doc) => {
-        if (!doc) return null;
-        const counts = {};
-        doc.categories.forEach(c => counts[c] = (counts[c] || 0) + 1);
-        return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+      if (!doc) return null;
+      const counts = {};
+      doc.categories.forEach(c => counts[c] = (counts[c] || 0) + 1);
+      return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
     };
 
     const topReqCat = getTopCategory(requestDoc);
@@ -170,17 +170,17 @@ const getTrendSummary = async (req, res) => {
 
     let summaryText = "";
     if (reqCount > offerCount) {
-        summaryText = `High demand for ${topReqCat || 'help'} nearby (${reqCount} requests).`;
+      summaryText = `High demand for ${topReqCat || 'help'} nearby (${reqCount} requests).`;
     } else if (offerCount > reqCount) {
-        summaryText = `Locals are offering ${topOfferCat || 'help'} (${offerCount} active offers).`;
+      summaryText = `Locals are offering ${topOfferCat || 'help'} (${offerCount} active offers).`;
     } else {
-        summaryText = `Balanced activity in your area (${reqCount} requests, ${offerCount} offers).`;
+      summaryText = `Balanced activity in your area (${reqCount} requests, ${offerCount} offers).`;
     }
 
     res.json({
-        summary: summaryText,
-        mostNeeded: topReqCat,  
-        mostOffered: topOfferCat 
+      summary: summaryText,
+      mostNeeded: topReqCat,
+      mostOffered: topOfferCat
     });
 
   } catch (error) {
@@ -217,20 +217,25 @@ const fulfillPost = async (req, res) => {
 
     // 4. Award Karma to the Helper
     if (helperId) {
-        const helper = await User.findByIdAndUpdate(
-            helperId, 
-            { $inc: { karmaPoints: 10 } }, // Increment by 10
-            { new: true }
-        );
+      const helper = await User.findByIdAndUpdate(
+        helperId,
+        { $inc: { karmaPoints: 10 } }, // Increment by 10
+        { new: true }
+      );
 
-        // 5. Send Real-time Notification (Bonus)
-        const io = req.app.get('socketio');
-        if (io) {
-            io.to(helperId.toString()).emit('notification', {
-                message: `You earned 10 Karma for helping with "${post.title}"!`,
-                newKarma: helper.karmaPoints
-            });
-        }
+      const io = req.app.get('socketio');
+      if (io && helper) {
+
+        io.to(helperId.toString()).emit('notification', {
+          message: `You earned 10 Karma for helping with "${post.title}"!`,
+          newKarma: helper.karmaPoints
+        });
+
+        io.emit("karma-updated", {
+          userId: helper._id,
+          karmaPoints: helper.karmaPoints
+        });
+      }
     }
 
     res.json(post);
