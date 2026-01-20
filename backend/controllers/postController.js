@@ -114,7 +114,7 @@ const getTrendSummary = async (req, res) => {
   }
 
   try {
-    const radiusInKm = dist ? parseFloat(dist) : 50; // Increased default to 50km
+    const radiusInKm = dist ? parseFloat(dist) : 5; // Increased default to 50km
     const userLat = parseFloat(lat);
     const userLng = parseFloat(lng);
 
