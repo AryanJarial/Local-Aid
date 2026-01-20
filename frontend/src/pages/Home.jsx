@@ -65,8 +65,24 @@ const Home = () => {
       }
     });
 
+    socket.on("karma-updated", ({ userId, karmaPoints }) => {
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.user?._id === userId
+            ? {
+              ...post,
+              user: {
+                ...post.user,
+                karmaPoints,
+              },
+            }
+            : post
+        )
+      );
+    });
+
     return () => socket.disconnect();
-  }, [user]);
+  }, [user, filterType]);
 
   useEffect(() => {
     if (!userLocation) return;
@@ -237,8 +253,8 @@ const Home = () => {
 
                     {/* Type Badge */}
                     <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm ${post.type === 'request'
-                        ? 'bg-red-50 text-red-600 border-red-200'
-                        : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                      ? 'bg-red-50 text-red-600 border-red-200'
+                      : 'bg-emerald-50 text-emerald-600 border-emerald-200'
                       }`}>
                       {post.type === 'request' ? '🔴 Requesting' : '🟢 Offering'}
                     </span>
@@ -252,7 +268,7 @@ const Home = () => {
                     </div>
                     <div className="w-full bg-black/5 h-1.5 rounded-full overflow-hidden">
                       <div
-                        className="bg-black/80 h-full rounded-full transition-all duration-1000 ease-out"
+                        className="bg-black/80 h-full rounded-full transition-all duration-700 ease-out"
                         style={{ width: `${trustPercentage}%` }}
                       ></div>
                     </div>
