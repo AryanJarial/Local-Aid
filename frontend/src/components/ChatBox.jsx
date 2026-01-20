@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import ScrollToBottom from 'react-scroll-to-bottom';
 import { io } from 'socket.io-client';
-import { Send, Paperclip, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Send, Paperclip, X, Loader2 } from 'lucide-react';
 
 const ENDPOINT = "http://localhost:5000";
 var socket;
@@ -19,15 +19,18 @@ const ChatBox = ({ user, selectedChat }) => {
 
   const selectedChatRef = useRef(null);
 
+  // --- LOGIC: Socket Setup (Unchanged) ---
   useEffect(() => {
     socket = io(ENDPOINT);
     socket.emit("setup", user);
     return () => socket.disconnect();
   }, [user]);
 
+  // --- LOGIC: Message Listener (Unchanged) ---
   useEffect(() => {
     const handleMessageReceived = (newMessageReceived) => {
       if (!selectedChatRef.current || selectedChatRef.current._id !== newMessageReceived.conversationId._id) {
+        // notification logic would go here
       } else {
         setMessages((prev) => [...prev, newMessageReceived]);
       }
@@ -36,6 +39,7 @@ const ChatBox = ({ user, selectedChat }) => {
     return () => socket.off("message received", handleMessageReceived);
   }, []);
 
+  // --- LOGIC: Fetch Messages (Unchanged) ---
   useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedChat) return;
@@ -56,6 +60,7 @@ const ChatBox = ({ user, selectedChat }) => {
     clearImage();
   }, [selectedChat, user.token]);
 
+  // --- LOGIC: File Handling (Unchanged) ---
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -70,6 +75,7 @@ const ChatBox = ({ user, selectedChat }) => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // --- LOGIC: Send Message (Unchanged) ---
   const sendMessage = async (e) => {
     if ((!e || e.key === "Enter" || e.type === "click") && (newMessage || selectedFile)) {
       try {
@@ -106,19 +112,20 @@ const ChatBox = ({ user, selectedChat }) => {
 
   if (!selectedChat) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-400">
-        <div className="text-6xl mb-4">💬</div>
+      <div className="flex flex-col items-center justify-center h-full text-gray-500 bg-[#23272f]">
+        <div className="text-6xl mb-4 opacity-50">💬</div>
         <p>Select a chat to start messaging</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50/50">
+    <div className="flex flex-col h-full bg-[#23272f]">
 
+      {/* --- Chat Area --- */}
       <div className="flex-1 overflow-hidden relative">
         {loading ? (
-          <div className="flex items-center justify-center h-full text-blue-500">
+          <div className="flex items-center justify-center h-full text-blue-400">
             <Loader2 className="w-10 h-10 animate-spin" />
           </div>
         ) : (
@@ -131,27 +138,29 @@ const ChatBox = ({ user, selectedChat }) => {
                   {!isMyMessage && (
                     <img
                       src={m.sender.profilePicture || "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg"}
-                      className="w-8 h-8 rounded-full mr-2 self-end mb-1 border border-gray-200"
+                      className="w-8 h-8 rounded-full mr-2 self-end mb-1 border border-gray-600"
                       alt="sender"
                     />
                   )}
 
-                  <div className={`relative px-4 py-2.5 max-w-[75%] shadow-sm ${isMyMessage
-                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl rounded-br-none"
-                      : "bg-white border border-gray-100 text-gray-800 rounded-2xl rounded-bl-none"
-                    }`}>
+                  <div className={`relative px-4 py-2.5 max-w-[75%] shadow-sm ${
+                    isMyMessage
+                      ? "bg-blue-600 text-white rounded-2xl rounded-br-none" // Dark mode: Solid blue for user
+                      : "bg-gray-700 text-gray-200 rounded-2xl rounded-bl-none" // Dark mode: Dark gray for others
+                    }`}
+                  >
                     {m.image && (
-                      <div className="mb-2 overflow-hidden rounded-lg border border-black/10">
+                      <div className="mb-2 overflow-hidden rounded-lg border border-black/20">
                         <img
                           src={m.image}
-                          className="max-h-48 w-auto object-contain bg-gray-100"
+                          className="max-h-48 w-auto object-contain bg-gray-800"
                           alt="attachment"
                         />
                       </div>
                     )}
                     {m.text && <p className="leading-relaxed text-sm md:text-base break-words">{m.text}</p>}
 
-                    <p className={`text-[10px] mt-1 text-right ${isMyMessage ? 'text-blue-100' : 'text-gray-400'}`}>
+                    <p className={`text-[10px] mt-1 text-right ${isMyMessage ? 'text-blue-200' : 'text-gray-400'}`}>
                       {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
@@ -162,12 +171,14 @@ const ChatBox = ({ user, selectedChat }) => {
         )}
       </div>
 
-      <div className="p-4 bg-white border-t border-gray-200 relative">
+      {/* --- Input Area --- */}
+      <div className="px-6 py-4 bg-[#2a2f38] border-t border-gray-700 relative">
 
+        {/* Image Preview Pop-up */}
         {previewUrl && (
-          <div className="absolute bottom-full left-4 mb-2 bg-white p-2 rounded-lg shadow-lg border border-gray-200 animate-fade-in-up">
+          <div className="absolute bottom-full left-6 mb-3 bg-gray-800 p-2 rounded-lg shadow-xl border border-gray-700">
             <div className="relative">
-              <img src={previewUrl} className="h-24 w-auto rounded-md object-cover" />
+              <img src={previewUrl} className="h-24 w-auto rounded-md object-cover" alt="Preview" />
               <button
                 onClick={clearImage}
                 className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition"
@@ -183,21 +194,21 @@ const ChatBox = ({ user, selectedChat }) => {
           </div>
         )}
 
-        <div className="flex items-end gap-2">
+        <div className="flex items-center gap-3">
           <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
 
           <button
             onClick={() => fileInputRef.current.click()}
-            className="p-3 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+            className="text-gray-400 hover:text-gray-200 p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
             title="Attach Image"
           >
             <Paperclip className="w-5 h-5" />
           </button>
 
-          <div className="flex-1 bg-gray-100 rounded-3xl flex items-center px-4 py-1 focus-within:ring-2 focus-within:ring-blue-300 focus-within:bg-white transition-all">
+          <div className="flex-1 relative">
             <input
               type="text"
-              className="flex-1 bg-transparent py-3 border-none focus:ring-0 text-gray-700 placeholder-gray-400"
+              className="w-full px-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-500 transition-all text-gray-200 placeholder-gray-400 text-sm"
               placeholder="Type a message..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
@@ -209,12 +220,13 @@ const ChatBox = ({ user, selectedChat }) => {
           <button
             onClick={sendMessage}
             disabled={isUploading || (!newMessage && !selectedFile)}
-            className={`p-3 rounded-full transition-all transform hover:scale-105 shadow-md flex items-center justify-center ${(newMessage || selectedFile) && !isUploading
-                ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:shadow-lg"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
+            className={`p-2.5 rounded-lg transition-all transform hover:scale-105 shadow-md flex items-center justify-center ${
+              (newMessage || selectedFile) && !isUploading
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "bg-gray-700 text-gray-500 cursor-not-allowed"
+            }`}
           >
-            {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-0.5" />}
+            {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </button>
         </div>
       </div>
