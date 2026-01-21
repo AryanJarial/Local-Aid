@@ -1,5 +1,9 @@
 import mongoose from 'mongoose';
 
+function arrayLimit(val) {
+  return val.length <= 4;
+}
+
 const postSchema = mongoose.Schema(
   {
     user: {
@@ -17,19 +21,17 @@ const postSchema = mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['request', 'offer'], 
+      enum: ['request', 'offer'],
       required: true,
     },
     category: {
       type: String,
-      required: true, 
+      required: true,
     },
-    status: {
-      type: String,
-      enum: ['open', 'closed'],
-      default: 'open',
+    images: {
+      type: [String],
+      validate: [arrayLimit, '{PATH} exceeds the limit of 4']
     },
-
     location: {
       type: {
         type: String,
@@ -37,11 +39,11 @@ const postSchema = mongoose.Schema(
         default: 'Point',
       },
       coordinates: {
-        type: [Number], 
+        type: [Number],
         required: true,
       },
       address: {
-        type: String, 
+        type: String,
       },
     },
     status: {
@@ -51,7 +53,7 @@ const postSchema = mongoose.Schema(
     },
     fulfilledBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User', 
+      ref: 'User',
       default: null
     },
   },
