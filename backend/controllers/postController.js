@@ -38,6 +38,8 @@ const getPosts = async (req, res) => {
       ];
     }
 
+    query.status = { $ne: 'fulfilled' };
+
     const posts = await Post.find(query)
       .sort({ createdAt: -1 })
       .populate('user', 'name profilePicture karmaPoints');
