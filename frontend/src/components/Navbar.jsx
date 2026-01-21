@@ -7,7 +7,7 @@ import logoImage from '/Logo.png';
 const ENDPOINT = "http://localhost:5000";
 
 const Navbar = () => {
-  const { user, updateUser } = useContext(AuthContext);
+  const { user, updateUser, notification } = useContext(AuthContext);
   const [dropdownOpen, setDropdownOpen] = useState('');
 
   const navBgClass = user 
@@ -65,11 +65,15 @@ const Navbar = () => {
               </Link>
 
               {user && (
-                <Link 
-                  to="/chat" 
-                  className={`${textColorClass} font-medium transition-colors`}
-                >
+                <Link to="/chat" className={`${textColorClass} font-medium transition-colors relative`}>
                   Messages
+                  
+                  {/* --- 2. NOTIFICATION BADGE --- */}
+                  {notification.length > 0 && (
+                    <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-bounce">
+                      {notification.length > 9 ? '9+' : notification.length}
+                    </span>
+                  )}
                 </Link>
               )}
               
