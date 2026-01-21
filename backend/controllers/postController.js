@@ -52,7 +52,7 @@ const getPosts = async (req, res) => {
 
 const createPost = async (req, res) => {
   try {
-    const { title, description, type, category, latitude, longitude, address } = req.body;
+    const { title, description, type, category, latitude, longitude, address, images } = req.body;
 
     const post = new Post({
       user: req.user._id,
@@ -60,6 +60,7 @@ const createPost = async (req, res) => {
       description,
       type,
       category,
+      images: images || [],
       location: {
         type: 'Point',
         coordinates: [Number(longitude), Number(latitude)],
