@@ -65,6 +65,14 @@ const Home = () => {
       }
     });
 
+    socket.on('post-completed', (postId) => {
+      setPosts((prevPosts) => prevPosts.filter((post) => post._id !== postId));
+    });
+
+    socket.on('post-deleted', (postId) => {
+      setPosts((prevPosts) => prevPosts.filter((post) => post._id !== postId));
+    });
+
     socket.on("karma-updated", ({ userId, karmaPoints }) => {
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
