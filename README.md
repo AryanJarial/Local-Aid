@@ -205,7 +205,7 @@
 
 ###
 
-<p align="left">🔗 **Frontend:** https://your-frontend-url  <br>🔗 **Backend API:** https://your-backend-url</p>
+<p align="left">🔗 **Frontend:** https://local-aid.vercel.app <br>🔗 **Backend API:** https://localaid-62jv.onrender.com</p>
 
 ###
 
@@ -221,7 +221,7 @@
 
 ###
 
-<p align="left">Aryan Jarial<br><br>GitHub: https://github.com/your-username<br>LinkedIn: https://linkedin.com/in/your-profile</p>
+<p align="left">Aryan Jarial<br><br>GitHub: https://github.com/AryanJarial<br>LinkedIn: www.linkedin.com/in/aryan-jarial-753a66315</p>
 
 ###
 
