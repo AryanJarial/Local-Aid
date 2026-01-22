@@ -156,7 +156,7 @@
 ###
 
 <div align="center">
-  <img height="200" src="./screenshots/ChatBox.png"  />
+  <img height="200" src="./screenshots/Chatbox.png"  />
 </div>
 
 ###
