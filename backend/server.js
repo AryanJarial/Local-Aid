@@ -17,7 +17,7 @@ const app = express();
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://localaid-frontend.vercel.app" 
+  "https://local-aid.vercel.app" 
 ];
 
 app.use(cors({
@@ -49,7 +49,7 @@ const io = new Server(httpServer, {
 app.set('socketio', io);
 
 io.on('connection', (socket) => {
-  
+
   socket.on('setup', (userData) => {
     socket.join(userData._id);
     console.log("User Joined Room:", userData._id);
