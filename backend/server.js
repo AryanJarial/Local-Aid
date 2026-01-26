@@ -18,8 +18,8 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "https://local-aid.vercel.app",
-  "https://local-aid-git-main-aryan-jarials-projects.vercel.app/",
-  "https://local-n1586a2pg-aryan-jarials-projects.vercel.app/"
+  "https://local-aid-git-main-aryan-jarials-projects.vercel.app",
+  "https://local-n1586a2pg-aryan-jarials-projects.vercel.app"
 ];
 
 app.use(cors({
